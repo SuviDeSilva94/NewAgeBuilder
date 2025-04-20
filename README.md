@@ -77,6 +77,9 @@ echo "OPENAI_API_KEY=your_openai_key_here" >> .env
 
 # Run server
 uvicorn main:app --reload
+
+If any Proxy related issues comes up in OpenAI, try installing this version of openai pachage
+pip install openai==1.75.0
 ```
 
 ---
