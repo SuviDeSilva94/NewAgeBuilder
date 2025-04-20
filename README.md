@@ -8,6 +8,11 @@ Built with **FastAPI**, **React**, and powered by **Google Gemini** and **OpenAI
 
 ---
 
+sample image :
+
+<img width="1440" alt="Screenshot 2025-04-21 at 01 46 26" src="https://github.com/user-attachments/assets/4b3b3bc6-24a5-4370-88b3-847ba295720e" />
+
+
 ## 🧠 Key Features
 
 ### 🗣️ Conversational Website Generation
@@ -161,6 +166,5 @@ Have ideas? Want to extend support for Claude or LLaMA? Submit a PR!
 Let’s build the future of conversational website creation — together.  
 ✨ Star the repo if you love it!
 
----
 
 Made with ❤️ by Suvi De Silva
