@@ -70,15 +70,25 @@ uvicorn main:app --reload
 
 
 📁 Folder Structure
+
 bash
+
 Copy
+
 Edit
+
 backend/
+
   ├── main.py        # FastAPI server with WebSocket
+  
   ├── .env           # API key
+  
   ├── requirements.txt
+  
 frontend/
+
   └── (Optional) React-based live preview UI
+  
   
 🤝 Contributions Welcome
 
