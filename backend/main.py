@@ -2,12 +2,17 @@ from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 from typing import List, Dict, Optional
 import json
+from dotenv import load_dotenv
 import os
 import traceback
+import json
+import re
 import google.generativeai as genai
 from dotenv import load_dotenv
 import re
 import random
+
+from openai import OpenAI
 
 dummy_responses = [
   {
@@ -101,20 +106,20 @@ dummy_responses = [
   }
 ]
 
-responses = []
-
 # Load environment variables
 load_dotenv()
-api_key = os.getenv('GEMINI_API_KEY')
-if not api_key:
+gemini_key = os.getenv("GEMINI_API_KEY")
+openai_key = os.getenv("OPENAI_API_KEY")
+
+if not gemini_key:
     raise ValueError("GEMINI_API_KEY is not set in .env file")
+if not openai_key:
+    raise ValueError("OPENAI_API_KEY is not set in .env file")
 
-# Configure Gemini
-genai.configure(api_key=api_key)
-model = genai.GenerativeModel('gemini-2.0-flash')
-
-for m in genai.list_models():
-    print(m.name, m.supported_generation_methods)
+# Configure clients
+genai.configure(api_key=gemini_key)
+gemini_model = genai.GenerativeModel('gemini-2.0-flash')
+client = OpenAI()
 
 # Templates
 COMPONENT_TEMPLATES = {
@@ -168,6 +173,8 @@ COMPONENT_TEMPLATES = {
     'text': {'type': 'text', 'content': ''}
 }
 
+
+# App setup
 app = FastAPI()
 
 app.add_middleware(
@@ -178,6 +185,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# Connection manager
 class ConnectionManager:
     def __init__(self):
         self.active_connections: List[WebSocket] = []
@@ -199,10 +207,10 @@ class ConnectionManager:
 
 manager = ConnectionManager()
 
+# Helpers
 def extract_json_from_response(response_text: str) -> str:
     print("[AI] Raw response before cleanup:", response_text)
-    cleaned = re.sub(r"```(?:json)?", "", response_text).strip()
-    cleaned = cleaned.replace("```", "").strip()
+    cleaned = re.sub(r"```(?:json)?", "", response_text).replace("```", "").strip()
     print("[AI] Cleaned JSON string:", cleaned)
     return cleaned
 
@@ -218,242 +226,207 @@ def detect_website_type(prompt: str) -> str:
         return "blog"
     else:
         return "general"
-    
-async def process_prompt_with_ai(prompt: str, components: Optional[List[Dict]] = None) -> Dict:
+
+# Memory of responses
+responses = []
+
+# Core processing function
+async def process_prompt_with_ai(prompt: str, components: Optional[List[Dict]] = None, model_choice: str = "gemini") -> Dict:
     try:
-        print(f"[AI] Processing prompt: {prompt}")
+        print(f"[AI] Processing prompt with model: {model_choice}")
+        site_type = detect_website_type(prompt)
 
         type_specific_guidance = {
-        "ecommerce": """
-        If the website is eCommerce, make sure it includes:
-        - Product grid or featured products
-        - Categories or filters
-        - Add to cart buttons
-        - Promotions or banners
-        - Clear CTAs like "Buy Now"
-        """,
-            "saas": """
-        If the website is for SaaS, include:
-        - Product explanation section
-        - Pricing plans
-        - Testimonials
-        - Feature highlights
-        - Call-to-action like "Start Free Trial"
-        """,
-            "portfolio": """
-        If it's a portfolio, include:
-        - Intro section with name & tagline
-        - Project gallery
-        - Skills/technologies
-        - Contact form
-        """,
-            "blog": """
-        If it's a blog, include:
-        - Blog post previews (title, image, excerpt)
-        - Categories/tags
-        - About section
-        - Newsletter signup
-        """,
-            "general": ""
-        }
-        
-        # Detect type and get relevant guidance
-        site_type = detect_website_type(prompt)
-        extra_guidance = type_specific_guidance.get(site_type, "")
+    "ecommerce": """
+Design a high-converting eCommerce site with:
+- A visually appealing product showcase (grid or carousel)
+- Filterable categories or tags
+- Clear product cards with price, image, and "Add to Cart"
+- A promotional banner or featured deal
+- Prominent CTAs like "Shop Now", "Buy", or "Get Deal"
+- Customer testimonials and trust badges
+""",
+    "saas": """
+Design a sleek, conversion-focused SaaS website that includes:
+- A feature-rich Hero with CTA (e.g., "Start Free Trial")
+- A section explaining core product features
+- Pricing plans in a 3-column layout with CTA buttons
+- Testimonials from users or companies
+- Integrations or platform logos
+- Clean footer with legal links and socials
+""",
+    "portfolio": """
+Design a visually strong portfolio site for a creative professional:
+- Hero with name, title (e.g., "Full-Stack Developer"), and CTA
+- Project gallery with images and project descriptions
+- About section with skills and tech stack
+- Testimonials or client quotes
+- Contact form with modern styling
+""",
+    "blog": """
+Design a minimal and readable blog layout:
+- Hero with blog title and description
+- Latest post previews (title, date, image, excerpt)
+- Sidebar with categories, tags, or newsletter signup
+- Author bio or About section
+- Clean footer with social links
+""",
+    "general": """
+Design a clean, modern multi-purpose site:
+- A bold Hero with a strong message and CTA
+- Features or services section
+- Visual testimonials or trust section
+- Pricing (if applicable)
+- Contact form or newsletter signup
+- Footer with essential links
+"""
+}
+
+
+        guidance = type_specific_guidance[site_type]
         print(f"[AI] Detected website type: {site_type}")
 
+        system_prompt = f"""
+You are a senior UI/UX designer and AI-powered frontend engineer.
 
-        system_prompt = """
-You are a senior UI/UX engineer and AI assistant web developer.
+TASK:
+Translate the users natural language website prompt into a valid JSON array representing UI layout components for a modern, responsive website.
 
-{extra_guidance}
+{guidance}
 
-ALWAYS:
-- Analyze and research websites in a similar domain or category.
-- Ensure all components are relevant and visually consistent with each other.
-- Think critically and creatively to design modern, user-friendly UI sections.
-- Prioritize layout balance, clear hierarchy, and aesthetic harmony.
-- Optimize for real-world usability, mobile responsiveness, and accessibility.
+🔥 FOCUS ON MODERN DESIGN:
+- Prioritize beautiful layout flow, balanced whitespace, and visual hierarchy
+- Design must feel premium — like Stripe, Linear, Notion, Vercel, Framer
+- Include responsive layout and attractive styling for each component
+- Mobile-friendly spacing, centered alignment, and good readability
 
-Your job is to generate or edit structured UI components in JSON format based on the user's natural language prompt.
+🧩 SUPPORTED COMPONENT TYPES:
+- Header (with logo, navigation, CTA)
+- Hero (title, subtitle, backgroundImage, CTA)
+- Section (title, layout, children)
+- Card (inside Section or Testimonials)
+- Text (styled block text)
+- Image (with src and alt)
+- Pricing (title, plans array)
+- ContactForm (with fields, CTA)
+- Footer (content, socialLinks)
 
-GOAL:
-Output a valid JSON array representing the UI structure of a webpage — either fully new or with updates to an existing structure.
+📦 COMPONENT FORMAT:
+Each object must follow:
 
-OUTPUT FORMAT RULES:
-- Output MUST be a single JSON array: [ {...}, {...}, ... ]
-- Each object MUST follow this schema pattern:
-
-{
+{{
   "type": "ComponentType",
-  "title": "Optional title",
-  "subtitle": "Optional subtitle",
-  "content": "Optional content or description",
-  "image": "Optional image path",
-  "backgroundImage": "Optional background image path (only for Hero)",
-  "cta": { "label": "", "href": "", "style": { ... } },
-  "style": { "backgroundColor": "#hex", "color": "#hex", ... },
-  ...other valid props per component
-}
+  "title": "...",
+  "subtitle": "...",
+  "content": "...",
+  "image": "...",
+  "backgroundImage": "...",
+  "cta": {{
+    "label": "...",
+    "href": "...",
+    "style": {{ "backgroundColor": "#...", "color": "#..." }}
+  }},
+  "style": {{
+    "backgroundColor": "#...",
+    "color": "#...",
+    "padding": "...",
+    "margin": "...",
+    "textAlign": "...",
+    ...
+  }},
+  "children": [ ... ]
+}}
 
-IMAGE HANDLING:
-- Always use full URL paths for images (e.g., https://picsum.photos/200/300).
-- Hero components must use "backgroundImage" instead of "image".
-- Logos and image blocks must use:
-  "logo": { "src": "https://...", "alt": "Logo Alt" }
-- Use "src" for images only, not "link" or other fields.
+🎨 STYLE RULES:
+- Always include a "style" object per component and per card
+- Use padding (e.g. "2rem"), borderRadius (e.g. "8px"), textAlign
+- Set "color" and "backgroundColor" based on contrast best practices
+- Use high-quality image URLs (e.g. `https://source.unsplash.com/...`)
 
-STYLE RULES:
-- "style" must always be a valid object.
-  Example: "style": { "backgroundColor": "#FF5722" }
-- Common style keys: backgroundColor, color, padding, margin, borderRadius, fontSize, textAlign
+🖼 IMAGE RULES:
+- Hero uses "backgroundImage"
+- Cards or image blocks use "image"
+- Logos must be in "logo": {{ "src": "...", "alt": "..." }}
 
-TEXT COLOR DEFAULTING:
-- If backgroundColor is dark (e.g., black or dark gray), default text color to white: "#ffffff"
-- If backgroundColor is light (e.g., white or cream), default text color to black: "#000000"
-- Apply this to all components including Hero, Section, ContactForm, etc.
+📱 RESPONSIVE DESIGN:
+- Use CSS units like rem, %, auto, maxWidth
+- Apply grid or flex for layout with mobile fallbacks
+- Ensure spacing, alignment, and font sizes scale on devices
 
-NAVIGATION BAR DEFAULT STYLE:
-- Header (navigation) components must use:
-  "style": {
-    "backgroundColor": "#000000",
-    "color": "#ffffff",
-    "position": "sticky",
-    "top": 0,
-    "zIndex": 1000,
-    "padding": "1rem",
-    "display": "flex",
-    "justifyContent": "space-between",
-    "alignItems": "center"
-  }
+✏️ WHEN EDITING EXISTING COMPONENTS:
+- Update only the relevant items passed
+- Do not repeat unchanged parts
+- Match by `type`, `id`, or `title` if available
 
-CONTACT FORM DEFAULT STYLE:
-- If no background or text color is provided, use:
-  "style": {
-    "backgroundColor": "#2c2b2b",
-    "color": "black",
-    "padding": "2rem",
-    "borderRadius": "8px"
-  }
+📌 SPECIAL RULE — FULL BACKGROUND:
+If the user prompt says “make the site red” or “background yellow”, wrap all components in:
 
-- ContactForm fields (minimum sample):
-  "fields": [
-    { "label": "Name", "type": "text", "required": true },
-    { "label": "Email", "type": "email", "required": true },
-    { "label": "Phone Number", "type": "tel", "required": false },
-    { "label": "Message", "type": "textarea", "required": true }
-  ]
+{{
+  "type": "Section",
+  "style": {{ "backgroundColor": "red" }},
+  "children": [ ... ]
+}}
 
-SUPPORTED COMPONENT TYPES:
-- Hero: title, subtitle, backgroundImage, CTA
-- Header: logo, navigation, optional CTA
-- Section: layout block (testimonials, features), grid/flex/default layout
-- Card: inside Section, with title, image, content
-- Text: stylable block of text
-- Image: static image block with src, alt
-- Pricing: title + plans [ { name, price, features[] } ]
-- ContactForm: with fields and CTA
-- Table: title, columns, rows
-- Footer: content, socialLinks [ { icon, link } ]
+🚫 DO NOT:
+- Use markdown (no ```json)
+- Add any comments or explanations
+- Include invalid JSON
 
-DO NOT:
-- Use markdown syntax (e.g., no ```json)
-- Include explanation or comments
-- Use "component":..., "props":... structure
-- Duplicate components unnecessarily when editing
-
-IF THE PROMPT IS FOR EDITING:
-- Modify only the relevant component(s) passed in.
-- Avoid duplication. Match by type, id, or title.
-
-IF THE PROMPT IS FOR CREATION:
-- Generate a full layout with proper structure, flow, and visual appeal.
-
-FULL PAGE BACKGROUND RULE:
-- If prompt mentions "site background", "make the website red", or similar:
-  Wrap all components inside a parent Section:
-  {
-    "type": "Section",
-    "style": { "backgroundColor": "red" },
-    "children": [ ... ]
-  }
-
-RESPONSIVE DESIGN GUIDELINES:
-- All components must render well on mobile, tablet, and desktop.
-- Use responsive CSS values: rem, %, auto, maxWidth, etc.
-- Layout components should use grid or flex properties with fallback responsiveness.
-- Ensure content (including forms and buttons) resizes and aligns gracefully.
-
-EXAMPLE STYLE:
-"style": {
-  "padding": "2rem",
-  "textAlign": "center",
-  "maxWidth": "1200px",
-  "margin": "0 auto"
-}
-
-WRAPPING COMPONENTS:
-- When applying a global background Section, also use:
-"style": {
-  "padding": "2rem",
-  "backgroundColor": "#hex",
-  "minHeight": "100vh",
-  "width": "100%",
-  "boxSizing": "border-box"
-}
-
-REAL-WORLD WEBSITE QUALITY & MODERN INSPIRATION:
-- Design should resemble modern websites like Stripe, Airbnb, Notion, Shopify, Apple, Linear, Vercel, Framer.
-- Follow best practices:
-  - Clear hierarchy
-  - Ample whitespace
-  - Balanced contrast
-  - Strong typography
-  - Clean layout flow
-
-Preferred layout flow for full sites:
-1. Header (logo, navigation, CTA)
-2. Hero (headline, subtext, CTA, background)
-3. Features Section (3 to 4 cards in grid or flex)
-4. Testimonials or Trust Section
-5. Pricing (if relevant)
-6. ContactForm or Newsletter Signup
-7. Footer
-
-IMAGE SOURCES (use full URLs):
-- https://source.unsplash.com
-- https://picsum.photos
-- https://placeimg.com
-
-VISUAL ACCESSIBILITY RULE:
-- Always
-A single raw JSON array only. No extra explanation, no markdown, no wrappers.
+🎯 GOAL:
+Output a clean, readable, and **fully valid** JSON array — nothing else.
 """
 
-        user_parts = [
-            system_prompt,
-            "User prompt:",
-            prompt
-        ]
 
-        if components:
-            user_parts.append("Existing page layout as JSON:")
-            user_parts.append(json.dumps(components))
-            user_parts.append("Update this layout according to the prompt.")
-            print("[AI] Mode: EDIT")
+        # -------------------- OPENAI --------------------
+        if model_choice == "openai":
+            print("[AI] Mode: Chat GPT - OpenAI")
+            messages = [{"role": "system", "content": system_prompt}]
+
+            if components:
+                messages.append({
+                    "role": "user",
+                    "content": f"Update this layout based on the following prompt:\n\n{prompt}\n\nExisting layout:\n{json.dumps(components)}"
+                })
+            else:
+                messages.append({"role": "user", "content": prompt})
+
+            response = client.chat.completions.create(
+                model="gpt-4",
+                messages=messages,
+                temperature=0.7,
+                max_tokens=2048
+            )
+            response_text = response.choices[0].message.content.strip()
+            print("=== GPT Response Start ===\n")
+            print(response_text)
+            print("\n=== GPT Response End ===")
+
+        # -------------------- GEMINI --------------------
         else:
-            user_parts.append("Generate a brand new layout from scratch.")
-            print("[AI] Mode: CREATE")
+            user_parts = [system_prompt, "User prompt:", prompt]
 
-        response = model.generate_content(user_parts)
-        response_text = response.text.strip()
+            if components:
+                user_parts.append("Existing page layout as JSON:")
+                user_parts.append(json.dumps(components))
+                user_parts.append("Update this layout according to the prompt.")
+                print("[AI] Mode: EDIT")
+            else:
+                user_parts.append("Generate a brand new layout from scratch.")
+                print("[AI] Mode: CREATE")
 
-        print(f"[AI] Raw response: {response_text}")
+            response = gemini_model.generate_content(user_parts)
+            response_text = response.text.strip()
+            print("=== Gemini Response Start ===\n")
+            print(response_text)
+            print("\n=== Gemini Response End ===")
+
+        # Validation / Cleanup
+        if "componentName" in response_text or "properties" in response_text:
+            print("[⚠️ WARNING] Response contains non-standard schema keys like 'componentName'")
+
         responses.append(response_text)
-
-        clean_json_str = extract_json_from_response(response_text)
-        component_list = json.loads(clean_json_str)
-        print("[AI] Parsed component list:", component_list)
+        clean_json = extract_json_from_response(response_text)
+        component_list = json.loads(clean_json)
 
         if not isinstance(component_list, list):
             component_list = [component_list]
@@ -466,23 +439,20 @@ A single raw JSON array only. No extra explanation, no markdown, no wrappers.
         }
 
     except Exception as e:
-        error_msg = f"AI processing failed: {str(e)}"
         traceback.print_exc()
         return {
             "action": "update_component",
-            "message": "Failed to generate component(s)",
-            "payload": [
-                {
-                    "type": "text",
-                    "content": error_msg
-                }
-            ]
+            "message": "❌ Failed to generate component(s)",
+            "payload": [{"type": "text", "content": str(e)}]
         }
 
+
+# GET endpoint
 @app.get("/responses")
 async def get_all_responses():
     return {"responses": responses}
 
+# WebSocket
 @app.websocket("/ws")
 async def websocket_endpoint(websocket: WebSocket):
     await manager.connect(websocket)
@@ -491,17 +461,16 @@ async def websocket_endpoint(websocket: WebSocket):
             data = await websocket.receive_json()
             print(f"[WS] Received: {data}")
 
-            if data.get("type") in ["prompt", "edit"]:
-                prompt_text = data.get("content", "").strip()
-                components = data.get("components") if "components" in data else None
-                if prompt_text:
-                    print(f"[WS] MODE: {'edit' if components else 'create'}")
-                    ai_response = await process_prompt_with_ai(prompt_text, components)
-                    await websocket.send_json(ai_response)
-                else:
-                    await websocket.send_json({"error": "Prompt is empty"})
+            prompt_text = data.get("content", "").strip()
+            components = data.get("components") if "components" in data else None
+            model_choice = data.get("model", "gemini")
+
+            if prompt_text:
+                print(f"[WS] MODE: {'edit' if components else 'create'} | MODEL: {model_choice}")
+                ai_response = await process_prompt_with_ai(prompt_text, components, model_choice)
+                await websocket.send_json(ai_response)
             else:
-                await websocket.send_json({"error": "Unsupported message type"})
+                await websocket.send_json({"error": "Prompt is empty"})
 
     except WebSocketDisconnect:
         print("[WS] Client disconnected")

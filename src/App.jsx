@@ -19,6 +19,10 @@ import {
   TableHead,
   TableRow,
   Paper,
+  Select, 
+  MenuItem, 
+  FormControl,
+   InputLabel,
 } from '@mui/material';
 import AccountCircleIcon from '@mui/icons-material/AccountCircle';
 import GitHubIcon from '@mui/icons-material/GitHub';
@@ -88,6 +92,9 @@ function App() {
     },
   ]);
   const [dynamicComponents, setDynamicComponents] = useState([]);
+
+  const [model, setModel] = useState('gemini');
+
   const ws = useRef(null);
 
   useEffect(() => {
@@ -138,8 +145,8 @@ function App() {
       type: dynamicComponents.length ? 'edit' : 'prompt',
       content: prompt,
       components: dynamicComponents,
+      model, // 👈 add model key
     };
-
     ws.current.send(JSON.stringify(message));
     setMessages((prev) => [...prev, { type: 'user', content: prompt }]);
     setPrompt('');
@@ -495,6 +502,27 @@ function App() {
                   lineHeight: '20px',
                 }}
               />
+              <FormControl
+                variant="standard"
+                sx={{ minWidth: 100, mr: 2 }}
+              >
+                <InputLabel sx={{ color: 'white' }}>Model</InputLabel>
+                <Select
+                  value={model}
+                  onChange={(e) => setModel(e.target.value)}
+                  label="Model"
+                  sx={{
+                    color: 'white',
+                    '& .MuiSelect-icon': { color: 'white' },
+                    '&::before': { borderBottomColor: 'white' },
+                    '&:hover:not(.Mui-disabled)::before': { borderBottomColor: 'white' },
+                  }}
+                >
+                  <MenuItem value="gemini">Gemini</MenuItem>
+                  <MenuItem value="openai">GPT-4</MenuItem>
+                </Select>
+              </FormControl>
+
               <IconButton
                 type="submit"
                 sx={{
@@ -515,16 +543,16 @@ function App() {
 
           {/* Right Side: Dynamic Component Preview */}
           <Box
-  sx={{
-    height: '100%',
-    width: '100%',
-    overflow: 'auto',
-    bgcolor: 'background.default',
-    boxSizing: 'border-box',
-    display: 'flex',
-    flexDirection: 'column',
-  }}
->
+            sx={{
+              height: '100%',
+              width: '100%',
+              overflow: 'auto',
+              bgcolor: 'background.default',
+              boxSizing: 'border-box',
+              display: 'flex',
+              flexDirection: 'column',
+            }}
+          >
             <Typography
               variant="h5"
               sx={{
