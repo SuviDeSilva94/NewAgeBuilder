@@ -166,5 +166,7 @@ Have ideas? Want to extend support for Claude or LLaMA? Submit a PR!
 Let’s build the future of conversational website creation — together.  
 ✨ Star the repo if you love it!
 
+<img width="1440" alt="Screenshot 2025-04-21 at 01 46 26" src="https://github.com/user-attachments/assets/a75330c0-b959-4789-addf-14c82d6a433e" />
+
 
 Made with ❤️ by Suvi De Silva
