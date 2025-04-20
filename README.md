@@ -1,109 +1,166 @@
-💡💡 **NewAgeBuilder – Conversational Website Creation with AI ✨**✨
-
-**NewAgeBuilder** is a modular, no-code web builder inspired by Lovable.dev — but taken to the next level with **multi-model AI**, **intelligent prompt context**, and **real-time previewing**.
-
-It allows users to create and edit entire websites just by chatting — no code required.
+Absolutely! Here's a **fully polished README.md** for your `NewAgeBuilder` project — clean, professional, and developer-friendly, with clear setup instructions, fallback options, and highlights of the wow factors you’ve built in.
 
 ---
 
-🧠 **Key Features**
+```markdown
+# 💡💡 NewAgeBuilder – Conversational Website Creation with AI ✨✨
 
-### 🗣️ Natural Language Website Generation  
-Simply describe what you want, and the AI turns it into structured, render-ready UI components.
+NewAgeBuilder is a modern no-code web builder inspired by [Lovable.dev](https://lovable.dev), allowing users to create entire websites simply by **chatting**. No code, no drag-and-drop — just describe your vision.
 
-### ♻ Multi-Model Support: Gemini + ChatGPT  
-Started with **Gemini**, and later integrated **ChatGPT** for **multi-model experimentation**. Users can switch between LLMs to get varied creative styles and strengths — a standout feature even beyond Lovable.dev.
-
-### 📙 Modular & Component-Based Architecture  
-Websites are built from reusable components (Hero, Header, Section, Card, Pricing, Footer). This structure supports easy updates and real-time customization.
-
-### ✍️ Smart Editing Mode  
-Provide the current layout + an instruction — and the AI will surgically update just the necessary parts, intelligently.
-
-### 🧠 Auto Context Detection  
-Detects the **type of website** (e.g., eCommerce, SaaS, Blog, Portfolio) based on prompt, and enhances the prompt to generate more accurate layouts.
-
-### ⚡ Real-Time AI via WebSocket  
-Live WebSocket communication powers an interactive, chat-driven builder with low-latency updates.
-
-### 🔍 Live Preview Support (Optional)  
-Compatible with React-based frontends that render components or full layouts instantly, giving users immediate visual feedback.
-
-### 🖼️ Future: Image Generation for Visual Components  
-Plans to integrate UI image generation using Gemini Vision or DALL·E (e.g., for Hero/Illustration/Avatars).
-
-### ♻ Future: Per-Component LLM Tagging  
-Highlight which model (Gemini or ChatGPT) generated each section to help users understand LLM behavior.
-
-### 🔧 No-Code Builder Experience  
-Ideal for marketers, founders, and designers who want to prototype or publish beautiful websites — no dev help required.
-
-### 🧪 Structured JSON Output  
-Output is always clean, standardized JSON — perfect for rendering with React, Vue, or static HTML exports.
+Built with **FastAPI**, **React**, and powered by **Google Gemini** and **OpenAI's ChatGPT**, it delivers a smart, real-time AI web design experience.
 
 ---
 
-🛇 **Tech Stack**
+## 🧠 Key Features
 
-- **Backend**: Python + FastAPI + WebSocket  
-- **AI Models**: Google Gemini (gemini-2.0-flash), OpenAI GPT-4  
-- **Prompting Strategy**: System prompt + inferred intent + optional layout  
-- **Frontend (Optional)**: React + MUI (with split-pane live preview)
+### 🗣️ Conversational Website Generation
+Just say what you want — the AI will generate a full structured JSON layout of your site.
+
+### 🧩 Modular, Component-Based Architecture
+Each site is made from individual UI components like `Hero`, `Header`, `Section`, `Card`, etc., making it easy to edit or rearrange without breaking layout integrity.
+
+### ✨ Multi-Model LLM Support
+Started with Gemini, but added **ChatGPT support** for versatility. The app dynamically switches models to leverage the best of both worlds — a feature Lovable.dev doesn’t offer.
+
+### 🧠 Prompt Intelligence
+Automatically detects the **website type** (e.g., ecommerce, blog, portfolio) and injects tailored context into LLM prompts for more accurate, stylish outputs.
+
+### 🛠️ Real-Time Preview & Editing
+Includes optional live preview UI. As you type your prompts, watch the layout render instantly.
+
+### 🔧 Smart Edit Mode
+Send an existing layout + an update instruction, and the AI will modify only the relevant section intelligently.
+
+### 📡 Live WebSocket Backend
+FastAPI + WebSocket enable real-time, stateful conversations with the AI backend.
 
 ---
 
-🚀 **Quick Start**
+## 🚀 What's Unique / WOW Factors
+
+- ✅ **Multi-model AI Switching (Gemini + ChatGPT)**
+- ✅ **Context-aware prompt enhancements** based on site type
+- ✅ **Live component editing**
+- ✅ **High-fidelity layout output** in structured JSON
+- ✅ **Clean UI inspired by Lovable.dev**
+- ✅ **Future-ready architecture**: modular and extendable
+
+---
+
+## 📦 Tech Stack
+
+| Layer      | Tech Used                           |
+|------------|-------------------------------------|
+| Backend    | FastAPI + WebSocket + Python        |
+| AI Models  | Google Gemini (`gemini-2.0-flash`) + OpenAI GPT-4 |
+| Frontend   | React + Vite + TailwindCSS + MUI    |
+| Data       | JSON-based UI Component Trees       |
+
+---
+
+## 🛠️ Setup Instructions
+
+### 1. 🧠 Backend Setup (FastAPI)
 
 ```bash
 git clone https://github.com/your-username/NewAgeBuilder.git
-cd NewAgeBuilder
+cd NewAgeBuilder/backend
 
+# Set up virtual environment
 python3 -m venv venv
 source venv/bin/activate
+
+# Install dependencies
 pip install -r requirements.txt
 
-# Add your Gemini and OpenAI API keys
-echo 'GEMINI_API_KEY=your_gemini_key_here' >> .env
-echo 'OPENAI_API_KEY=your_openai_key_here' >> .env
+# Add API keys
+touch .env
+echo "GEMINI_API_KEY=your_gemini_key_here" >> .env
+echo "OPENAI_API_KEY=your_openai_key_here" >> .env
 
+# Run server
 uvicorn main:app --reload
 ```
 
 ---
 
-🛠️ **Example Prompts**
+### 2. 🎨 Frontend Setup (React + Tailwind + Vite)
 
-- “Create a hero section with title ‘Welcome to NewAgeBuilder’ and a CTA to start building.”  
-- “Add a 3-column features section showcasing fast generation, live preview, and export support.”  
-- “Update the footer to include Twitter and GitHub icons.”  
-- “Make the whole site have a clean white background with modern fonts and soft shadows.”  
+```bash
+cd ../frontend
+npm install
+npm run dev
+```
+
+⚠️ **Having issues with peer dependencies?**
+
+Try:
+
+```bash
+npm install --legacy-peer-deps
+```
+
+Or switch to:
+
+```bash
+yarn install
+yarn dev
+# OR
+pnpm install
+pnpm dev
+```
+
+> 💡 Requires Node.js >= 18  
+Check your version with `node -v`
 
 ---
 
-📁 **Folder Structure**
+## 🛠️ Example Prompts
 
-```bash
-backend/
-  ├── main.py            # FastAPI + WebSocket logic
-  ├── utils/             # Helpers for LLM, JSON extraction, etc.
-  ├── .env               # API keys
+- “Create a hero section with title ‘Welcome to NewAgeBuilder’ and a CTA to start building.”
+- “Add a 3-column features section showcasing fast generation, live preview, and export support.”
+- “Update the footer to include Twitter and GitHub icons.”
+- “Make the background dark and futuristic with neon accent colors.”
 
-frontend/ (optional)
-  └── React-based UI     # Live preview pane & interface
+---
+
+## 🧪 Folder Structure
+
+```
+NewAgeBuilder/
+├── backend/
+│   ├── main.py              # FastAPI backend with WebSocket and LLM logic
+│   ├── .env                 # API keys
+│   ├── requirements.txt
+│
+├── frontend/                # Optional UI live preview
+│   ├── src/
+│   ├── index.html
+│   ├── package.json
+│   ├── tailwind.config.js
+│
+└── README.md
 ```
 
 ---
 
-🌟 **What Makes It Special**
+## 🔮 Future Improvements
 
-- ♻ Started with Gemini → scaled to **multi-model generation**
-- 💡 Added **automatic website type detection**
-- 🧠 Clean prompt enhancement improves LLM accuracy
-- ⚙️ Real-time AI + structured JSON makes dev handoff easy
-- 🌟 Future plans: **image generation**, **React export**, and **LLM introspection per component**
+- 🖼️ AI-generated images or assets for UI (via Gemini Vision / DALL·E)
+- 💡 UI component visual editing (drag or inline tweak)
+- 🌍 Export to HTML / React source code
+- 🧠 Fine-tuned AI persona for style-specific websites (e.g., minimal, vintage, startup)
+- 📦 Plugin system for custom components or themes
 
 ---
 
-🤝 **Contributions Welcome**
+## 🤝 Contributions Welcome
 
-Want to help build the future of conversational no-code tools? PRs, ideas, and feedback are all welcome!
+Have ideas? Want to extend support for Claude or LLaMA? Submit a PR!
+
+Let’s build the future of conversational website creation — together.  
+✨ Star the repo if you love it!
+
+---
+
+Made with ❤️ by Suvi De Silva
