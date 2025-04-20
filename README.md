@@ -1,4 +1,5 @@
-💡 NewAgeBuilder – Conversational Website Creation with AI ✨
+💡💡 **NewAgeBuilder – Conversational Website Creation with AI ✨**✨
+
 NewAgeBuilder is a modular, no-code web builder inspired by Lovable.dev, powered by Google Gemini.
 
 It allows users to create and edit entire websites just by chatting — no code required.
@@ -42,21 +43,31 @@ git clone https://github.com/your-username/NewAgeBuilder.git
 cd NewAgeBuilder
 
 # Set up virtual environment
+
 python3 -m venv venv
+
 source venv/bin/activate
+
 pip install -r requirements.txt
 
 # Add your Gemini API key to .env
+
 echo 'GEMINI_API_KEY=your_api_key_here' > .env
 
 # Run the backend
+
 uvicorn main:app --reload
+
 🛠️ Example Prompts
+
 “Create a hero section with title ‘Welcome to NewAgeBuilder’ and a CTA to start building.”
+
 
 “Add a 3-column features section showcasing fast generation, live preview, and export support.”
 
+
 “Update the footer to include Twitter and GitHub icons.”
+
 
 📁 Folder Structure
 bash
@@ -68,5 +79,7 @@ backend/
   ├── requirements.txt
 frontend/
   └── (Optional) React-based live preview UI
+  
 🤝 Contributions Welcome
+
 NewAgeBuilder is open to community contributions — help build the future of conversational no-code tools.
