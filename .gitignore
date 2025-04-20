@@ -1,0 +1,23 @@
+# macOS
+.DS_Store
+
+# Python (inside backend/)
+backend/__pycache__/
+backend/*.pyc
+backend/venv/
+backend/.env
+backend/setup_Backend/
+
+# Node / React
+node_modules/
+dist/
+build/
+*.log
+npm-debug.log*
+
+# Frontend setup
+setup_frontend/
+
+# Editors/IDEs
+.vscode/
+.idea/

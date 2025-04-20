@@ -206,12 +206,67 @@ def extract_json_from_response(response_text: str) -> str:
     print("[AI] Cleaned JSON string:", cleaned)
     return cleaned
 
+def detect_website_type(prompt: str) -> str:
+    prompt_lower = prompt.lower()
+    if "ecommerce" in prompt_lower or "shop" in prompt_lower or "store" in prompt_lower:
+        return "ecommerce"
+    elif "saas" in prompt_lower or "software" in prompt_lower or "dashboard" in prompt_lower:
+        return "saas"
+    elif "portfolio" in prompt_lower or "developer" in prompt_lower or "designer" in prompt_lower:
+        return "portfolio"
+    elif "blog" in prompt_lower or "articles" in prompt_lower:
+        return "blog"
+    else:
+        return "general"
+    
 async def process_prompt_with_ai(prompt: str, components: Optional[List[Dict]] = None) -> Dict:
     try:
         print(f"[AI] Processing prompt: {prompt}")
 
+        type_specific_guidance = {
+        "ecommerce": """
+        If the website is eCommerce, make sure it includes:
+        - Product grid or featured products
+        - Categories or filters
+        - Add to cart buttons
+        - Promotions or banners
+        - Clear CTAs like "Buy Now"
+        """,
+            "saas": """
+        If the website is for SaaS, include:
+        - Product explanation section
+        - Pricing plans
+        - Testimonials
+        - Feature highlights
+        - Call-to-action like "Start Free Trial"
+        """,
+            "portfolio": """
+        If it's a portfolio, include:
+        - Intro section with name & tagline
+        - Project gallery
+        - Skills/technologies
+        - Contact form
+        """,
+            "blog": """
+        If it's a blog, include:
+        - Blog post previews (title, image, excerpt)
+        - Categories/tags
+        - About section
+        - Newsletter signup
+        """,
+            "general": ""
+        }
+        
+        # Detect type and get relevant guidance
+        site_type = detect_website_type(prompt)
+        extra_guidance = type_specific_guidance.get(site_type, "")
+        print(f"[AI] Detected website type: {site_type}")
+
+
         system_prompt = """
 You are a senior UI/UX engineer and AI assistant web developer.
+
+{extra_guidance}
 
 ALWAYS:
 - Analyze and research websites in a similar domain or category.

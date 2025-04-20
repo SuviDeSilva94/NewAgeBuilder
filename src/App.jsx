@@ -515,17 +515,16 @@ function App() {
 
           {/* Right Side: Dynamic Component Preview */}
           <Box
-            sx={{
-              flex: 1,
-              p: 3,
-              overflowY: 'auto',
-              overflowX: 'hidden',
-              bgcolor: 'background.default',
-              height: '100%',
-              maxHeight: 'calc(100vh - 64px)', // minus AppBar height
-              boxSizing: 'border-box',
-            }}
-          >
+  sx={{
+    height: '100%',
+    width: '100%',
+    overflow: 'auto',
+    bgcolor: 'background.default',
+    boxSizing: 'border-box',
+    display: 'flex',
+    flexDirection: 'column',
+  }}
+>
             <Typography
               variant="h5"
               sx={{
